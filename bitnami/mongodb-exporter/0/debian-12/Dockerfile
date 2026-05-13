@@ -22,6 +22,9 @@ ENV HOME="/" \
 
 COPY prebuildfs /
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
+# Configure Debian mirror for faster downloads
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list 2>/dev/null || true
 # Install required system packages and dependencies
 RUN install_packages ca-certificates curl procps
 RUN --mount=type=secret,id=downloads_url,env=SECRET_DOWNLOADS_URL \
