@@ -40,10 +40,6 @@ If you are looking for our previous generation of images based on Debian Linux, 
 
 Learn more about the Bitnami tagging policy and the difference between rolling tags and immutable tags [in our documentation page](https://techdocs.broadcom.com/us/en/vmware-tanzu/application-catalog/tanzu-application-catalog/services/tac-doc/apps-tutorials-understand-rolling-tags-containers-index.html).
 
-You can see the equivalence between the different tags by taking a look at the `tags-info.yaml` file present in the branch folder, i.e `bitnami/ASSET/BRANCH/DISTRO/tags-info.yaml`.
-
-Subscribe to project updates by watching the [bitnami/containers GitHub repository](https://github.com/bitnami/containers).
-
 ## Get this image
 
 The Bitnami Confluent Schema Registry Docker image is only available to [Bitnami Secure Images](https://bitnami.com) customers.
@@ -72,7 +68,7 @@ The following tables list the main variables you can set.
 | `SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD`                 | Password to access the SSL keystore.                                                                                                   | `nil`                               |
 | `SCHEMA_REGISTRY_SSL_KEY_PASSWORD`                      | Password to access the SSL key.                                                                                                        | `nil`                               |
 | `SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD`               | Password to access the SSL truststore.                                                                                                 | `nil`                               |
-| `SCHEMA_REGISTRY_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM` | Endpoint identification algorithm to validate the server hostname using the server certificate.                                        | `nil`                               |
+| `SCHEMA_REGISTRY_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM` | Endpoint identification algorithm to validate the server hostname using the server certificate.                                        | `https`                             |
 | `SCHEMA_REGISTRY_CLIENT_AUTHENTICATION`                 | Client authentication configuration. Valid options: none, requested, over required.                                                    | `nil`                               |
 | `SCHEMA_REGISTRY_AVRO_COMPATIBILY_LEVEL`                | The Avro compatibility type. Valid options: none, backward, backward_transitive, forward, forward_transitive, full, or full_transitive | `nil`                               |
 | `SCHEMA_REGISTRY_DEBUG`                                 | Enable Schema Registry debug logs. Valid options: true or false                                                                        | `nil`                               |

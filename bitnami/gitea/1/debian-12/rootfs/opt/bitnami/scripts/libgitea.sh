@@ -58,6 +58,9 @@ gitea_validate() {
         fi
     }
 
+    # Validate credentials
+    check_empty_value "GITEA_ADMIN_PASSWORD"
+
     ! is_empty_value "$GITEA_HTTP_PORT" && check_valid_port "GITEA_HTTP_PORT"
     ! is_empty_value "$GITEA_SSH_PORT" && check_valid_port "GITEA_SSH_PORT"
     ! is_empty_value "$GITEA_SSH_LISTEN_PORT" && check_valid_port "GITEA_SSH_LISTEN_PORT"
@@ -148,7 +151,7 @@ gitea_initialize() {
         for dir in "${dirs[@]}"; do
             if ! is_empty_value "$dir"; then
                 ensure_dir_exists "$dir"
-                am_i_root && configure_permissions_ownership "$dir" -d "775" -f "664" -u "$GITEA_DAEMON_USER" -g "root"
+                am_i_root && configure_permissions_ownership "$dir" -d "775" -f "664" -u "$GITEA_DAEMON_USER" -g "root" -n
             fi
         done
         gitea_update_conf_file
@@ -161,6 +164,7 @@ gitea_initialize() {
         is_empty_value "$GITEA_ENABLE_OPENID_SIGNIN" || gitea_conf_set "openid" "ENABLE_OPENID_SIGNIN" "$GITEA_ENABLE_OPENID_SIGNIN"
         is_empty_value "$GITEA_ENABLE_OPENID_SIGNUP" || gitea_conf_set "openid" "ENABLE_OPENID_SIGNUP" "$GITEA_ENABLE_OPENID_SIGNUP"
         info "Persisting Gitea installation"
+        chmod 600 "$GITEA_CONF_FILE"
         persist_app "$app_name" "$GITEA_DATA_TO_PERSIST"
     else
         info "Restoring persisted Gitea installation"
@@ -223,10 +227,13 @@ gitea_update_conf_file() {
     gitea_conf_set "server" "SSH_DOMAIN" "$GITEA_SSH_DOMAIN"
     gitea_conf_set "server" "SSH_PORT" "$GITEA_SSH_PORT"
     gitea_conf_set "server" "SSH_LISTEN_PORT" "$GITEA_SSH_LISTEN_PORT"
+    gitea_conf_set "server" "HTTP_ADDR" "$GITEA_HTTP_ADDR"
     gitea_conf_set "server" "HTTP_PORT" "$GITEA_HTTP_PORT"
     gitea_conf_set "log" "ROOT_PATH" "$GITEA_LOG_ROOT_PATH"
     gitea_conf_set "repository" "ROOT" "$GITEA_REPO_ROOT_PATH"
     gitea_conf_set "security" "PASSWORD_HASH_ALGO" "$GITEA_PASSWORD_HASH_ALGO"
+    gitea_conf_set "security" "REVERSE_PROXY_LIMIT" "$GITEA_REVERSE_PROXY_LIMIT"
+    ! is_empty_value "$GITEA_REVERSE_PROXY_TRUSTED_PROXIES" && gitea_conf_set "security" "REVERSE_PROXY_TRUSTED_PROXIES" "$GITEA_REVERSE_PROXY_TRUSTED_PROXIES"
 
     gitea_conf_set "mailer" "ENABLED" "$GITEA_SMTP_ENABLED"
     is_empty_value "$GITEA_SMTP_HOST" || gitea_conf_set "mailer" "SMTP_ADDR" "$GITEA_SMTP_HOST"
@@ -258,7 +265,6 @@ gitea_conf_set() {
     local -r value="${3:?value is required}"
     local -r file="${4:-${GITEA_CONF_FILE}}"
 
-    debug "Setting ${section:+"${section}."}${key} to '${value}' in Gitea configuration"
     ini-file set --section "$section" --key "$key" --value "$value" "$file"
 }
 
@@ -280,6 +286,8 @@ gitea_pass_wizard() {
     wizard_url="http://127.0.0.1:${port}"
     cookie_file="/tmp/cookie$(generate_random_string -t alphanumeric -c 8)"
     curl_opts=("--location" "--silent" "--cookie" "$cookie_file" "--cookie-jar" "$cookie_file")
+    # Set HTTP_ADDR to 127.0.0.1 to avoid binding to 0.0.0.0 during wizard setup
+    gitea_conf_set "server" "HTTP_ADDR" "127.0.0.1"
     # Ensure gitea is started
     gitea_start_bg
     # Step 0: Get cookies
@@ -329,6 +337,8 @@ gitea_pass_wizard() {
         return 1
     fi
     gitea_stop
+    # After passing the wizard, we can bind to the configured address
+    gitea_conf_set "server" "HTTP_ADDR" "$GITEA_HTTP_ADDR"
     info "Gitea installation finished"
     true
 }

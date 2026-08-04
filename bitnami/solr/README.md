@@ -40,10 +40,6 @@ If you are looking for our previous generation of images based on Debian Linux, 
 
 Learn more about the Bitnami tagging policy and the difference between rolling tags and immutable tags [in our documentation page](https://techdocs.broadcom.com/us/en/vmware-tanzu/application-catalog/tanzu-application-catalog/services/tac-doc/apps-tutorials-understand-rolling-tags-containers-index.html).
 
-You can see the equivalence between the different tags by taking a look at the `tags-info.yaml` file present in the branch folder, i.e `bitnami/ASSET/BRANCH/DISTRO/tags-info.yaml`.
-
-Subscribe to project updates by watching the [bitnami/containers GitHub repository](https://github.com/bitnami/containers).
-
 ## Get this image
 
 The Bitnami Apache Solr Docker image is only available to [Bitnami Secure Images](https://bitnami.com) customers.
@@ -90,17 +86,17 @@ The following tables list the main variables you can set.
 | `SOLR_COLLECTION_SHARDS`        | Solar collection shards                                                       | `1`                                                |
 | `SOLR_ENABLE_AUTHENTICATION`    | Enables authentication                                                        | `no`                                               |
 | `SOLR_ADMIN_USERNAME`           | Administrator Username                                                        | `admin`                                            |
-| `SOLR_ADMIN_PASSWORD`           | Administrator password                                                        | `bitnami`                                          |
+| `SOLR_ADMIN_PASSWORD`           | Administrator password                                                        | `nil`                                              |
 | `SOLR_CLOUD_BOOTSTRAP`          | Indicates if this node is the one that performs the boostraping               | `no`                                               |
 | `SOLR_CORE_CONF_DIR`            | Solar CORE configuration directory                                            | `${SOLR_SERVER_DIR}/solr/configsets/_default/conf` |
 | `SOLR_SSL_ENABLED`              | Indicates if Solr starts with SSL enabled                                     | `no`                                               |
-| `SOLR_SSL_CHECK_PEER_NAME`      | Indicates if Solr should check the peer names                                 | `false`                                            |
+| `SOLR_SSL_CHECK_PEER_NAME`      | Indicates if Solr should check the peer names                                 | `true`                                             |
 | `SOLR_SSL_KEY_STORE_PASSWORD`   | Password for the Solr SSL keystore                                            | `nil`                                              |
 | `SOLR_SSL_TRUST_STORE_PASSWORD` | Password for the Solr SSL truststore                                          | `nil`                                              |
 | `SOLR_ZK_MAX_RETRIES`           | Maximum retries when waiting for zookeeper configuration operations to finish | `5`                                                |
 | `SOLR_ZK_SLEEP_TIME`            | Sleep time when waiting for zookeeper configuration operations to finish      | `5`                                                |
 | `SOLR_ZK_CHROOT`                | ZooKeeper ZNode chroot where to store solr data. Default: /solr               | `/solr`                                            |
-| `SOLR_ZK_HOSTS`                 | ZooKeeper nodes (comma-separated list of `host:port`\)                        | `nil`                                              |
+| `SOLR_ZK_HOSTS`                 | ZooKeeper nodes (comma-separated list of `host:port`)                         | `nil`                                              |
 
 #### Read-only environment variables
 

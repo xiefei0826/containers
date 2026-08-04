@@ -73,7 +73,8 @@ The following tables list the main variables you can set.
 | Name                                     | Description                                                                                                                                 | Default Value                   |
 |------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
 | `AIRFLOW_USERNAME`                       | Airflow username                                                                                                                            | `user`                          |
-| `AIRFLOW_PASSWORD`                       | Airflow password                                                                                                                            | `bitnami`                       |
+| `ALLOW_EMPTY_PASSWORD`                   | Allow an empty password.                                                                                                                    | `no`                            |
+| `AIRFLOW_PASSWORD`                       | Airflow password                                                                                                                            | `nil`                           |
 | `AIRFLOW_FIRSTNAME`                      | Airflow firstname                                                                                                                           | `Firstname`                     |
 | `AIRFLOW_LASTNAME`                       | Airflow lastname                                                                                                                            | `Lastname`                      |
 | `AIRFLOW_EMAIL`                          | Airflow email                                                                                                                               | `user@example.com`              |
@@ -82,8 +83,8 @@ The following tables list the main variables you can set.
 | `AIRFLOW_RAW_FERNET_KEY`                 | Airflow raw/unencoded Fernet key                                                                                                            | `nil`                           |
 | `AIRFLOW_FORCE_OVERWRITE_CONF_FILE`      | Force the airflow.cfg config file generation.                                                                                               | `no`                            |
 | `AIRFLOW_FERNET_KEY`                     | Airflow Fernet key                                                                                                                          | `nil`                           |
-| `AIRFLOW_WEBSERVER_SECRET_KEY`           | Airflow webserver secret key                                                                                                                | `airflow-web-server-key`        |
-| `AIRFLOW_APISERVER_SECRET_KEY`           | Airflow API secret key                                                                                                                      | `airflow-api-server-key`        |
+| `AIRFLOW_WEBSERVER_SECRET_KEY`           | Airflow webserver secret key                                                                                                                | `nil`                           |
+| `AIRFLOW_APISERVER_SECRET_KEY`           | Airflow API secret key                                                                                                                      | `nil`                           |
 | `AIRFLOW_APISERVER_BASE_URL`             | Airflow API server base URL.                                                                                                                | `nil`                           |
 | `AIRFLOW_APISERVER_HOST`                 | Airflow API server host                                                                                                                     | `127.0.0.1`                     |
 | `AIRFLOW_APISERVER_PORT_NUMBER`          | Airflow API server port.                                                                                                                    | `8080`                          |
@@ -123,7 +124,7 @@ The following tables list the main variables you can set.
 | `AIRFLOW_LDAP_ROLES_MAPPING`             | Mapping from LDAP DN to a list of Airflow roles.                                                                                            | `nil`                           |
 | `AIRFLOW_LDAP_ROLES_SYNC_AT_LOGIN`       | Replace ALL the user roles each login, or only on registration.                                                                             | `True`                          |
 | `AIRFLOW_LDAP_USE_TLS`                   | Use LDAP SSL.                                                                                                                               | `False`                         |
-| `AIRFLOW_LDAP_ALLOW_SELF_SIGNED`         | Allow self signed certificates in LDAP ssl.                                                                                                 | `True`                          |
+| `AIRFLOW_LDAP_ALLOW_SELF_SIGNED`         | Allow self signed certificates in LDAP ssl.                                                                                                 | `False`                         |
 | `AIRFLOW_LDAP_TLS_CA_CERTIFICATE`        | File that store the CA for LDAP ssl.                                                                                                        | `nil`                           |
 
 #### Read-only environment variables

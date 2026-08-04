@@ -42,15 +42,15 @@ declare -a writable_dirs=(
 for dir in "${writable_dirs[@]}"; do
     ensure_dir_exists "$dir"
     # Use daemon:root ownership for compatibility when running as a non-root user
-    configure_permissions_ownership "$dir" -d "775" -f "664" -u "$DISCOURSE_DAEMON_USER" -g "root"
+    configure_permissions_ownership "$dir" -d "775" -f "664" -u "$DISCOURSE_DAEMON_USER" -g "root" -n
 done
 
 # Gem 'sprockets' purposely includes a broken symlink, which causes permissions change to fail
 # We need to remove the broken symlink for chown to succeed
 find "${DISCOURSE_BASE_DIR}/vendor/bundle/ruby" -wholename "*/sprockets-*/test/fixtures/errors/symlink" -type l -exec rm -f {} \;
 
-# Add execution permissions to esbuild and ember binaries
-chmod +x "${DISCOURSE_BASE_DIR}/bin"/* "${DISCOURSE_BASE_DIR}/node_modules/esbuild/bin/esbuild" "${DISCOURSE_BASE_DIR}/node_modules/.bin"/*
+# Add execution permissions to binaries
+chmod +x "${DISCOURSE_BASE_DIR}/bin"/* "${DISCOURSE_BASE_DIR}/node_modules/.bin"/* "${DISCOURSE_BASE_DIR}/node_modules"/*/"bin/"*
 
 # HACK: The discourse source code is trying to access the deprecated Imagemagick "magick". In newer versions it was changed to "convert". Creating
 # a symlink to avoid any issue
@@ -62,4 +62,4 @@ fi
 
 # Required for running as non-root users, for persistence logic to work properly
 # Using g+rwx/g+rw instead of explicit 775/664 permissions because Discourse includes executable binaries in different subfolders
-configure_permissions_ownership "$DISCOURSE_BASE_DIR" -d "g+rwx" -f "g+rw" -u "$DISCOURSE_DAEMON_USER" -g "root"
+configure_permissions_ownership "$DISCOURSE_BASE_DIR" -d "g+rwx" -f "g+rw" -u "$DISCOURSE_DAEMON_USER" -g "root" -n

@@ -114,12 +114,6 @@ in the primary node and MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD in the rest of nod
         error_code=1
     }
 
-    check_yes_no_value() {
-        if ! is_yes_no_value "${!1}" && ! is_true_false_value "${!1}"; then
-            print_validation_error "The allowed values for ${1} are: yes no"
-        fi
-    }
-
     if [[ -n "$MONGODB_REPLICA_SET_MODE" ]]; then
         if [[ "$MONGODB_REPLICA_SET_MODE" =~ ^(secondary|arbiter|hidden) ]]; then
             if [[ -z "$MONGODB_INITIAL_PRIMARY_HOST" ]]; then
@@ -155,6 +149,13 @@ This is only recommended for development."
 Available options are 'primary/secondary/arbiter/hidden'"
             print_validation_error "$error_message"
         fi
+    else
+        if [[ -z "$MONGODB_ROOT_PASSWORD" ]] && ! is_boolean_yes "$ALLOW_EMPTY_PASSWORD"; then
+            error_message="The MONGODB_ROOT_PASSWORD environment variable is empty or not set. \
+Set the environment variable ALLOW_EMPTY_PASSWORD=yes to allow the container to be started with blank passwords. \
+This is only recommended for development."
+            print_validation_error "$error_message"
+        fi
     fi
 
     if [[ -n "$MONGODB_REPLICA_SET_KEY" ]] && ((${#MONGODB_REPLICA_SET_KEY} < 5)); then
@@ -185,19 +186,12 @@ Available options are 'primary/secondary/arbiter/hidden'"
 
     if is_boolean_yes "$ALLOW_EMPTY_PASSWORD"; then
         warn "You set the environment variable ALLOW_EMPTY_PASSWORD=${ALLOW_EMPTY_PASSWORD}. For safety reasons, do not use this flag in a production environment."
-    elif { [[ -n "$MONGODB_EXTRA_USERNAMES" ]] || [[ -n "$MONGODB_USERNAME" ]]; } && [[ -z "$MONGODB_ROOT_PASSWORD" ]]; then
-        # Authorization is turned on as soon as a set of users or a root
-        # password are given. If we have a set of users, but an empty root
-        # password, validation should fail unless ALLOW_EMPTY_PASSWORD is turned
-        # on.
-        error_message="The MONGODB_ROOT_PASSWORD environment variable is empty or not set. Set the environment variable ALLOW_EMPTY_PASSWORD=yes to allow the container to be started with a blank root password. This is only recommended for development."
-        print_validation_error "$error_message"
     fi
 
     # Warn for users with empty passwords, as these won't be created. Maybe
     # should we just end with an error here instead?
     if [[ -n "$MONGODB_EXTRA_USERNAMES" ]]; then
-        # Here we can access the arrays usernames and passwordsa, as these have
+        # Here we can access the arrays usernames and passwords, as these have
         # been initialised earlier on.
         for ((i = 0; i < ${#passwords[@]}; i++)); do
             if [[ -z "${passwords[i]}" ]]; then
@@ -948,6 +942,32 @@ EOF
 }
 
 ########################
+# Get if secondary node already has voting rights
+# Globals:
+#   MONGODB_*
+# Arguments:
+#   $1 - node
+#   $2 - port
+# Returns:
+#   Boolean
+#########################
+mongodb_secondary_node_has_voting_rights() {
+    local -r node="${1:?node is required}"
+    local -r port="${2:?port is required}"
+    local result
+
+    debug "Checking voting rights of the node"
+    result=$(
+        mongodb_execute_print_output "$MONGODB_INITIAL_PRIMARY_ROOT_USER" "$MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD" "admin" "$MONGODB_INITIAL_PRIMARY_HOST" "$MONGODB_INITIAL_PRIMARY_PORT_NUMBER" <<EOF
+rs.conf().members.filter(m => m.host === '$node:$port' && m.votes > 0 && m.priority > 0).length === 1
+EOF
+    )
+    debug "$result"
+
+    grep -q "true" <<<"$result"
+}
+
+########################
 # Get if hidden node is pending
 # Globals:
 #   MONGODB_*
@@ -1183,7 +1203,15 @@ mongodb_configure_secondary() {
             exit 1
         fi
         mongodb_wait_confirmation "$node" "$port"
+    fi
 
+    # Grant voting rights to the node if it does not have them yet. This must be
+    # done even when the node is already in the cluster: a previous attempt may
+    # have added it with votes/priority 0 and failed (or been restarted) before
+    # granting voting rights, leaving the node stuck without them.
+    if mongodb_secondary_node_has_voting_rights "$node" "$port"; then
+        info "Node already has voting rights"
+    else
         # Ensure that secondary nodes do not count as voting members until they are fully initialized
         # https://docs.mongodb.com/manual/reference/method/rs.add/#behavior
         if ! retry_while "mongodb_is_secondary_node_ready $node $port" "$MONGODB_INIT_RETRY_ATTEMPTS" "$MONGODB_INIT_RETRY_DELAY"; then
@@ -1194,17 +1222,16 @@ mongodb_configure_secondary() {
         # Grant voting rights to node
         # https://docs.mongodb.com/manual/tutorial/modify-psa-replica-set-safely/
         if ! retry_while "mongodb_configure_secondary_node_voting $node $port" "$MONGODB_INIT_RETRY_ATTEMPTS" "$MONGODB_INIT_RETRY_DELAY"; then
-            error "Secondary node did not get marked as secondary"
+            error "Secondary node did not get granted voting rights"
             exit 1
         fi
+    fi
 
-        # Mark node as readable. This is necessary in cases where the PVC is lost
-        if is_boolean_yes "$MONGODB_SET_SECONDARY_OK"; then
-            mongodb_execute_print_output "$MONGODB_INITIAL_PRIMARY_ROOT_USER" "$MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD" "admin" <<EOF
+    # Mark node as readable. This is necessary in cases where the PVC is lost
+    if is_boolean_yes "$MONGODB_SET_SECONDARY_OK"; then
+        mongodb_execute_print_output "$MONGODB_INITIAL_PRIMARY_ROOT_USER" "$MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD" "admin" <<EOF
 rs.secondaryOk()
 EOF
-        fi
-
     fi
 }
 
@@ -1696,7 +1723,12 @@ mongodb_execute() {
 
     local -a args=("--host" "$host" "--port" "$port")
     [[ -n "$final_user" ]] && args+=("-u" "$final_user")
-    [[ -n "$password" ]] && args+=("-p" "$password")
+    # Avoid passing credentials as arguments to mongosh, to avoid leaking them given a local observer with /proc read access can read them
+    if [[ -n "$password" ]]; then
+        local pass_file
+        pass_file="$(credential_to_temp_file "$password")"
+        args+=("-p" "$(<"$pass_file")")
+    fi
     if [[ -n "$extra_args" ]]; then
         local extra_args_array=()
         read -r -a extra_args_array <<<"$extra_args"
@@ -1704,5 +1736,5 @@ mongodb_execute() {
     fi
     [[ -n "$database" ]] && args+=("$database")
 
-    "$MONGODB_BIN_DIR/mongosh" "${args[@]}"
+    "${MONGODB_BIN_DIR}/mongosh" "${args[@]}"
 }

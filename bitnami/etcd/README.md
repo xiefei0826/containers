@@ -48,8 +48,6 @@ Non-root container images add an extra layer of security and are generally recom
 
 Learn more about the Bitnami tagging policy and the difference between rolling tags and immutable tags [in our documentation page](https://techdocs.broadcom.com/us/en/vmware-tanzu/application-catalog/tanzu-application-catalog/services/tac-doc/apps-tutorials-understand-rolling-tags-containers-index.html).
 
-> Please note ARM support in branch 3.4 is experimental/unstable according to [upstream docs](https://github.com/etcd-io/website/blob/main/content/en/docs/v3.4/op-guide/supported-platform.md), therefore branch 3.4 is only supported for AMD archs while branch 3.5 supports multiarch (AMD and ARM)
-
 ## Get this image
 
 The Bitnami Etcd Docker image is only available to [Bitnami Secure Images](https://bitnami.com) customers.
@@ -72,9 +70,9 @@ Apart from providing your custom configuration file, you can also modify the ser
 
 | Name                               | Description                                                                                  | Default Value           |
 |------------------------------------|----------------------------------------------------------------------------------------------|-------------------------|
-| `ETCD_SNAPSHOTS_DIR`               | etcd snaphots directory (used on "disaster recovery" feature).                               | `/snapshots`            |
-| `ETCD_SNAPSHOT_HISTORY_LIMIT`      | etcd snaphots history limit.                                                                 | `1`                     |
-| `ETCD_INIT_SNAPSHOTS_DIR`          | etcd init snaphots directory (used on "init from snapshot" feature).                         | `/init-snapshot`        |
+| `ETCD_SNAPSHOTS_DIR`               | etcd snapshots directory (used on "disaster recovery" feature).                              | `/snapshots`            |
+| `ETCD_SNAPSHOT_HISTORY_LIMIT`      | etcd snapshots history limit.                                                                | `1`                     |
+| `ETCD_INIT_SNAPSHOTS_DIR`          | etcd init snapshots directory (used on "init from snapshot" feature).                        | `/init-snapshot`        |
 | `ALLOW_NONE_AUTHENTICATION`        | Allow accessing etcd without any password.                                                   | `no`                    |
 | `ETCD_ROOT_PASSWORD`               | Password for the etcd root user.                                                             | `nil`                   |
 | `ETCD_CLUSTER_DOMAIN`              | Domain to use to discover other etcd members.                                                | `nil`                   |

@@ -3,7 +3,7 @@
 
 FROM docker.io/bitnami/minideb:bookworm AS builder
 
-ARG DOWNLOADS_URL="downloads.bitnami.com/files/stacksmith"
+ARG DOWNLOADS_URL="https://downloads.bitnami.com/files/stacksmith"
 ARG TARGETARCH
 
 ENV OS_ARCH="${TARGETARCH:-amd64}"
@@ -17,35 +17,35 @@ RUN --mount=type=secret,id=downloads_url,env=SECRET_DOWNLOADS_URL \
     DOWNLOADS_URL=${SECRET_DOWNLOADS_URL:-${DOWNLOADS_URL}} ; \
     mkdir -p /tmp/bitnami/pkg/cache/ ; cd /tmp/bitnami/pkg/cache/ || exit 1 ; \
     COMPONENTS=( \
-      "atlas-1.2.0-1-linux-${OS_ARCH}-debian-12" \
-      "chainloop-control-plane-migrations-1.96.2-0-linux-${OS_ARCH}-debian-12" \
+      "atlas-1.3.0-0-linux-${OS_ARCH}-debian-12" \
+      "chainloop-control-plane-migrations-1.105.3-0-linux-${OS_ARCH}-debian-12" \
     ) ; \
     for COMPONENT in "${COMPONENTS[@]}"; do \
       if [ ! -f "${COMPONENT}.tar.gz" ]; then \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz" -O ; \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz.sha256" -O ; \
+        curl -SsLf "${DOWNLOADS_URL}/${COMPONENT}.tar.gz" -O ; \
       fi ; \
-      sha256sum -c "${COMPONENT}.tar.gz.sha256" ; \
+      sha256sum -c "/opt/bitnami/checksums/${COMPONENT}.tar.gz.sha256" ; \
       tar -zxf "${COMPONENT}.tar.gz" -C /opt/bitnami --strip-components=2 --no-same-owner ; \
-      rm -rf "${COMPONENT}".tar.gz{,.sha256} ; \
-    done
+      rm -rf "${COMPONENT}".tar.gz ; \
+    done ; \
+    rm -rf /opt/bitnami/checksums ;
 RUN uninstall_packages curl
 
 ######
 
 FROM scratch
 
-ARG DOWNLOADS_URL="downloads.bitnami.com/files/stacksmith"
+ARG DOWNLOADS_URL="https://downloads.bitnami.com/files/stacksmith"
 ARG TARGETARCH
 
 ENV OS_ARCH="${TARGETARCH:-amd64}"
 
 LABEL org.opencontainers.image.base.name="scratch" \
-      org.opencontainers.image.created="2026-05-12T12:47:43Z" \
+      org.opencontainers.image.created="2026-08-03T01:01:42Z" \
       org.opencontainers.image.description="Application packaged by Broadcom, Inc." \
       org.opencontainers.image.title="chainloop-control-plane-migrations" \
       org.opencontainers.image.vendor="Broadcom, Inc." \
-      org.opencontainers.image.version="1.96.2"
+      org.opencontainers.image.version="1.105.3"
 
 COPY rootfs /
 COPY --from=builder /opt/bitnami/chainloop/migrations /migrations
@@ -55,7 +55,7 @@ COPY --from=builder /opt/bitnami/atlas/licenses /opt/bitnami/atlas/licenses
 COPY --from=builder /opt/bitnami/chainloop/.spdx-chainloop-control-plane-migrations.spdx /opt/bitnami/chainloop/.spdx-chainloop-control-plane-migrations.spdx
 COPY --from=builder /opt/bitnami/chainloop/licenses /opt/bitnami/chainloop/licenses
 
-ENV APP_VERSION="1.96.2" \
+ENV APP_VERSION="1.105.3" \
     BITNAMI_APP_NAME="chainloop-control-plane-migrations" \
     IMAGE_REVISION="0" \
     PATH="/opt/bitnami/atlas/bin:$PATH"

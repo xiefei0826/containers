@@ -3,17 +3,17 @@
 
 FROM docker.io/bitnami/minideb:bookworm
 
-ARG DOWNLOADS_URL="downloads.bitnami.com/files/stacksmith"
+ARG DOWNLOADS_URL="https://downloads.bitnami.com/files/stacksmith"
 ARG TARGETARCH
 
 LABEL org.opencontainers.image.base.name="docker.io/bitnami/minideb:bookworm" \
-      org.opencontainers.image.created="2026-05-07T15:10:15Z" \
+      org.opencontainers.image.created="2026-07-20T13:11:43Z" \
       org.opencontainers.image.description="Application packaged by Broadcom, Inc." \
       org.opencontainers.image.documentation="https://github.com/bitnami/containers/tree/main/bitnami/couchdb/README.md" \
       org.opencontainers.image.source="https://github.com/bitnami/containers/tree/main/bitnami/couchdb" \
       org.opencontainers.image.title="couchdb" \
       org.opencontainers.image.vendor="Broadcom, Inc." \
-      org.opencontainers.image.version="3.5.1"
+      org.opencontainers.image.version="3.5.2"
 
 ENV HOME="/" \
     OS_ARCH="${TARGETARCH:-amd64}" \
@@ -28,20 +28,20 @@ RUN --mount=type=secret,id=downloads_url,env=SECRET_DOWNLOADS_URL \
     DOWNLOADS_URL=${SECRET_DOWNLOADS_URL:-${DOWNLOADS_URL}} ; \
     mkdir -p /tmp/bitnami/pkg/cache/ ; cd /tmp/bitnami/pkg/cache/ || exit 1 ; \
     COMPONENTS=( \
-      "wait-for-port-1.0.10-9-linux-${OS_ARCH}-debian-12" \
-      "ini-file-1.4.9-9-linux-${OS_ARCH}-debian-12" \
+      "wait-for-port-1.0.10-14-linux-${OS_ARCH}-debian-12" \
+      "ini-file-1.4.9-13-linux-${OS_ARCH}-debian-12" \
       "erlang-28.5.0-0-linux-${OS_ARCH}-debian-12" \
-      "couchdb-3.5.1-16-linux-${OS_ARCH}-debian-12" \
+      "couchdb-3.5.2-6-linux-${OS_ARCH}-debian-12" \
     ) ; \
     for COMPONENT in "${COMPONENTS[@]}"; do \
       if [ ! -f "${COMPONENT}.tar.gz" ]; then \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz" -O ; \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz.sha256" -O ; \
+        curl -SsLf "${DOWNLOADS_URL}/${COMPONENT}.tar.gz" -O ; \
       fi ; \
-      sha256sum -c "${COMPONENT}.tar.gz.sha256" ; \
+      sha256sum -c "/opt/bitnami/checksums/${COMPONENT}.tar.gz.sha256" ; \
       tar -zxf "${COMPONENT}.tar.gz" -C /opt/bitnami --strip-components=2 --no-same-owner ; \
-      rm -rf "${COMPONENT}".tar.gz{,.sha256} ; \
-    done
+      rm -rf "${COMPONENT}".tar.gz ; \
+    done ; \
+    rm -rf /opt/bitnami/checksums ;
 RUN apt-get update && apt-get upgrade -y && \
     apt-get clean && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 RUN chmod g+rwX /opt/bitnami
@@ -49,10 +49,10 @@ RUN find / -perm /6000 -type f -exec chmod a-s {} \; || true
 
 COPY rootfs /
 RUN /opt/bitnami/scripts/couchdb/postunpack.sh
-ENV APP_VERSION="3.5.1" \
+ENV APP_VERSION="3.5.2" \
     BITNAMI_APP_NAME="couchdb" \
-    IMAGE_REVISION="25" \
-    LD_LIBRARY_PATH="/opt/bitnami/common/lib:$LD_LIBRARY_PATH" \
+    IMAGE_REVISION="14" \
+    LD_LIBRARY_PATH="/opt/bitnami/common/lib" \
     PATH="/opt/bitnami/common/bin:/opt/bitnami/erlang/bin:/opt/bitnami/couchdb/bin:$PATH"
 
 VOLUME [ "/bitnami/couchdb" ]

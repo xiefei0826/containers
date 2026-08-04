@@ -34,6 +34,11 @@ superset_validate() {
         error "$1"
         error_code=1
     }
+    check_empty_value() {
+        if is_empty_value "${!1}"; then
+            print_validation_error "${1} must be set"
+        fi
+    }
     check_multi_value() {
         if [[ " ${2} " != *" ${!1} "* ]]; then
             print_validation_error "The allowed values for ${1} are: ${2}"
@@ -56,13 +61,20 @@ superset_validate() {
     ! is_empty_value "$SUPERSET_DATABASE_PORT_NUMBER" && check_valid_port "SUPERSET_DATABASE_PORT_NUMBER"
     ! is_empty_value "$REDIS_PORT_NUMBER" && check_valid_port "REDIS_PORT_NUMBER"
 
-    # Check Superset secret key
-    if [[ -z "$SUPERSET_SECRET_KEY" ]]; then
-        print_validation_error "SUPERSET_SECRET_KEY must be set"
-    fi
-
     # Check Superset node role
     check_multi_value "SUPERSET_ROLE" "webserver celery-worker celery-beat celery-flower init"
+
+    # Check Superset secret key ...
+    check_empty_value "SUPERSET_SECRET_KEY"
+    # ... and other role-specific credentials
+    case "$SUPERSET_ROLE" in
+    "init")
+        check_empty_value "SUPERSET_PASSWORD"
+        ;;
+    "celery-flower")
+        is_empty_value "FLOWER_BASIC_AUTH" && warn "Basic authentication is not enabled for Celery Flower. This is not recommended for production environments."
+        ;;
+    esac
 
     return "$error_code"
 }
@@ -89,6 +101,28 @@ superset_initialize() {
 }
 
 ########################
+# Wait for a connection to be available
+# Globals:
+#   None
+# Arguments:
+#   $1 - host
+#   $2 - port
+# Returns:
+#   0 if successful, 1 otherwise
+#########################
+wait_for_connection() {
+    local -r host="${1:?missing host}"
+    local -r port="${2:?missing port}"
+    check_connection() {
+        (echo > /dev/tcp/"$host"/"$port") >/dev/null 2>&1
+    }
+    if ! retry_while "check_connection"; then
+        error "Could not connect to ${host}:${port}"
+        return 1
+    fi
+}
+
+########################
 # Run Superset init commands
 # Globals:
 #   SUPERSET_*
@@ -98,6 +132,13 @@ superset_initialize() {
 #   None
 #########################
 superset_run_init() {
+    if ! is_boolean_yes "$SUPERSET_SKIP_DATABASE_WAIT"; then
+        info "Waiting for PostgreSQL to be available"
+        wait_for_connection "$SUPERSET_DATABASE_HOST" "$SUPERSET_DATABASE_PORT_NUMBER"
+        info "Waiting for Redis to be available"
+        wait_for_connection "$REDIS_HOST" "$REDIS_PORT_NUMBER"
+    fi
+
     # Initialize the database
     info "Applying DB migrations"
     superset_execute db upgrade
