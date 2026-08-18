@@ -1,7 +1,7 @@
 # Copyright Broadcom, Inc. All Rights Reserved.
 # SPDX-License-Identifier: APACHE-2.0
 
-FROM docker.io/bitnami/minideb:bookworm
+FROM docker.m.daocloud.io/bitnami/minideb:bookworm
 
 ARG DOWNLOADS_URL="https://downloads.bitnami.com/files/stacksmith"
 ARG TARGETARCH
@@ -47,6 +47,9 @@ RUN uninstall_packages curl
 
 COPY rootfs /
 RUN /opt/bitnami/scripts/openldap/postunpack.sh
+# Enable MemberOf Overlay
+RUN cp /opt/bitnami/openldap/lib/openldap/memberof.so /opt/bitnami/openldap/libexec/openldap/memberof.so
+
 ENV APP_VERSION="2.6.13" \
     BITNAMI_APP_NAME="openldap" \
     IMAGE_REVISION="10" \
